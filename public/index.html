@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DARK-EYE-OFFICIAL | Pair Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background: radial-gradient(circle at top, #1a1a2e 0%, #000 70%); color:#fff; font-family:'Poppins',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+.container{width:100%; max-width:480px;}
+.logo{text-align:center; margin-bottom:25px;}
+.logo h1{font-family:'Orbitron'; font-size:28px; letter-spacing:2px; background: linear-gradient(90deg,#00ff88,#00d4ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow:0 0 20px #00ff8855;}
+.logo p{color:#666; font-size:13px; margin-top:5px; letter-spacing:3px;}
+.card{background: rgba(20,20,25,0.8); backdrop-filter: blur(20px); border:1px solid #222; border-radius:24px; padding:30px; box-shadow:0 0 50px rgba(0,255,136,0.1), inset 0 1px 0 rgba(255,255,255,0.05);}
+.tabs{display:flex; gap:10px; margin-bottom:20px;}
+.tab{flex:1; padding:10px; border-radius:12px; background:#111; border:1px solid #222; color:#666; cursor:pointer; text-align:center; font-size:14px;}
+.tab.active{background:#00ff88; color:#000; font-weight:600; border-color:#00ff88;}
+input{width:100%; padding:16px 18px; background:#0a0a0a; border:1px solid #222; border-radius:14px; color:#fff; font-size:16px; outline:none; transition:0.3s; margin-top:12px;}
+input:focus{border-color:#00ff88; box-shadow:0 0 15px #00ff8822;}
+button.main{width:100%; padding:16px; background: linear-gradient(90deg,#00ff88,#00d4ff); border:none; border-radius:14px; font-weight:700; font-size:16px; cursor:pointer; margin-top:18px; color:#000; transition:0.3s;}
+button.main:hover{transform:translateY(-2px); box-shadow:0 10px 25px #00ff8844;}
+.code-box{margin-top:25px; background:#000; border:1px dashed #00ff88; border-radius:16px; padding:20px; text-align:center; display:none;}
+.code-box h3{font-size:13px; color:#666; letter-spacing:2px;}
+.code{font-family:'Orbitron'; font-size:32px; letter-spacing:10px; color:#00ff88; margin:15px 0; text-shadow:0 0 20px #00ff88;}
+.session-box{margin-top:20px; background:#000; border:1px solid #222; border-radius:14px; padding:15px; display:none; max-height:200px; overflow:auto; font-size:11px; word-break:break-all; color:#00ff88;}
+.actions{display:flex; gap:10px; margin-top:12px; display:none;}
+.actions button{flex:1; padding:12px; border-radius:10px; border:1px solid #222; background:#111; color:#fff; cursor:pointer;}
+.status{margin-top:15px; font-size:13px; color:#888; text-align:center;}
+.dot{display:inline-block; width:8px; height:8px; background:#00ff88; border-radius:50%; margin-right:6px; animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1} 50%{opacity:0.3}}
+.footer{margin-top:25px; text-align:center; font-size:11px; color:#444;}
+.footer a{color:#00ff88; text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo">
+<h1>DARK-EYE-OFFICIAL</h1>
+<p>MULTI-BOT PAIR PANEL</p>
+</div>
+<div class="card">
+<div class="tabs">
+<div class="tab active" onclick="switchTab('pair')">Pair Code</div>
+<div class="tab" onclick="switchTab('qr')">QR Code</div>
+</div>
+
+<div id="pairTab">
+<input id="number" placeholder="2557xxxxxxxx (with country code)" />
+<button class="main" onclick="getPair()">GENERATE PAIRING CODE</button>
+</div>
+
+<div id="qrTab" style="display:none; text-align:center;">
+<p style="color:#666; font-size:13px;">Scan QR to link bot</p>
+<button class="main" onclick="getQR()">GENERATE QR</button>
+<div id="qrImg" style="margin-top:20px;"></div>
+</div>
+
+<div class="code-box" id="codeBox">
+<h3>YOUR PAIRING CODE</h3>
+<div class="code" id="pairCode">---- ----</div>
+<p style="color:#888; font-size:12px;">Go to WhatsApp > Linked Devices > Link with phone number > Enter this code<br><br>Waiting for login...</p>
+<div class="status"><span class="dot"></span><span id="statusText">Waiting for WhatsApp connection...</span></div>
+</div>
+
+<div class="session-box" id="sessionBox"></div>
+<div class="actions" id="actions">
+<button onclick="copySession()">Copy SESSION_ID</button>
+<button onclick="downloadSession()" style="background:#00ff88; color:#000; font-weight:700">Download</button>
+</div>
+
+<div class="footer">
+Powered by <a>prodev-ofc</a> | Works for META-AI, DARK-EYE & All Baileys Bots<br>
+🌑 https://github.com/prodev-ofc/dark-eye-official
+</div>
+</div>
+</div>
+
+<script>
+let currentSession = null;
+let interval = null;
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('pairTab').style.display = t==='pair'?'block':'none';
+  document.getElementById('qrTab').style.display = t==='qr'?'block':'none';
+}
+
+async function getPair(){
+  const num = document.getElementById('number').value;
+  if(!num) return alert('Enter number like 2557xxxxxxxx');
+  document.getElementById('pairTab').querySelector('button').innerText = 'GENERATING...';
+  const res = await fetch(`/pair?number=${num}`);
+  const data = await res.json();
+  document.getElementById('pairTab').querySelector('button').innerText = 'GENERATE PAIRING CODE';
+  if(data.code){
+    document.getElementById('codeBox').style.display='block';
+    document.getElementById('pairCode').innerText = data.code;
+    currentSession = data.sessionId;
+    startPolling();
+  }else{
+    alert(data.error || 'Error');
+  }
+}
+
+function startPolling(){
+  interval = setInterval(async ()=>{
+    const res = await fetch(`/session/${currentSession}`);
+    const data = await res.json();
+    if(data.status === 'completed'){
+      clearInterval(interval);
+      document.getElementById('statusText').innerText = '✅ Connected Successfully!';
+      document.getElementById('sessionBox').style.display='block';
+      document.getElementById('sessionBox').innerText = data.SESSION_ID;
+      document.getElementById('actions').style.display='flex';
+      document.getElementById('actions').style.display='flex';
+    }
+  }, 3000);
+}
+
+async function getQR(){
+  document.getElementById('qrImg').innerHTML = 'Generating QR...';
+  const res = await fetch('/qr');
+  const data = await res.json();
+  if(data.qr){
+    document.getElementById('qrImg').innerHTML = `<img src="${data.qr}" style="width:250px; border-radius:12px; border:2px solid #00ff88">`;
+  }
+}
+
+function copySession(){
+  const txt = document.getElementById('sessionBox').innerText;
+  navigator.clipboard.writeText(txt);
+  alert('✅ SESSION_ID Copied! Paste in your bot ENV as SESSION_ID');
+}
+function downloadSession(){
+  const txt = document.getElementById('sessionBox').innerText;
+  const blob = new Blob([txt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dark-eye-session-${currentSession}.txt`;
+  a.click();
+}
+</script>
+</body>
+</html>
